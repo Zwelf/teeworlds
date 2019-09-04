@@ -111,8 +111,8 @@ MACRO_CONFIG_STR(SvMaprotation, sv_maprotation, 768, "", CFGFLAG_SAVE|CFGFLAG_SE
 MACRO_CONFIG_INT(SvMatchesPerMap, sv_matches_per_map, 1, 1, 100, CFGFLAG_SAVE|CFGFLAG_SERVER, "Number of matches on each map before rotating")
 MACRO_CONFIG_INT(SvMatchSwap, sv_match_swap, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "Swap teams between matches")
 MACRO_CONFIG_INT(SvPowerups, sv_powerups, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "Allow powerups like ninja")
-MACRO_CONFIG_INT(SvScorelimit, sv_scorelimit, 20, 0, 1000, CFGFLAG_SAVE|CFGFLAG_SERVER, "Score limit (0 disables)")
-MACRO_CONFIG_INT(SvTimelimit, sv_timelimit, 0, 0, 1000, CFGFLAG_SAVE|CFGFLAG_SERVER, "Time limit in minutes (0 disables)")
+MACRO_CONFIG_INT(SvScorelimit, sv_scorelimit, 20, 0, 100, CFGFLAG_SAVE|CFGFLAG_SERVER, "Score limit (0 disables)")
+MACRO_CONFIG_INT(SvTimelimit, sv_timelimit, 1, 1, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "Time limit in minutes (0 disables)")
 MACRO_CONFIG_STR(SvGametype, sv_gametype, 32, "dm", CFGFLAG_SAVE|CFGFLAG_SERVER, "Game type (dm, tdm, ctf, lms, lts)")
 MACRO_CONFIG_INT(SvTournamentMode, sv_tournament_mode, 0, 0, 2, CFGFLAG_SAVE|CFGFLAG_SERVER, "Tournament mode. When enabled, players joins the server as spectator (2=additional restricted spectator chat)")
 MACRO_CONFIG_INT(SvPlayerReadyMode, sv_player_ready_mode, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "When enabled, players can pause/unpause the game and start the game on warmup via their ready state")
@@ -135,6 +135,14 @@ MACRO_CONFIG_INT(SvVoteSpectateRejoindelay, sv_vote_spectate_rejoindelay, 3, 0, 
 MACRO_CONFIG_INT(SvVoteKick, sv_vote_kick, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "Allow voting to kick players")
 MACRO_CONFIG_INT(SvVoteKickMin, sv_vote_kick_min, 0, 0, MAX_CLIENTS, CFGFLAG_SAVE|CFGFLAG_SERVER, "Minimum number of players required to start a kick vote")
 MACRO_CONFIG_INT(SvVoteKickBantime, sv_vote_kick_bantime, 5, 0, 1440, CFGFLAG_SAVE|CFGFLAG_SERVER, "The time to ban a player if kicked by vote. 0 makes it just use kick")
+
+MACRO_CONFIG_INT(SvBombTime, sv_bomb_time, 20, 1, 60, CFGFLAG_SAVE|CFGFLAG_SERVER, "Time in seconds until bombs explode");
+MACRO_CONFIG_STR(SvBombExplodeMessage, sv_bomb_explode_message, 128, "BOOM!", CFGFLAG_SAVE|CFGFLAG_SERVER, "Displayed message when bombs explode");
+MACRO_CONFIG_INT(SvBombScoreSurvive, sv_bomb_score_survive, 1, 0, 100, CFGFLAG_SAVE|CFGFLAG_SERVER, "Score gain for surviving as a human");
+MACRO_CONFIG_INT(SvBombScoreLastSurvivor, sv_bomb_score_last_survivor, 0, 0, 100, CFGFLAG_SAVE|CFGFLAG_SERVER, "Score gain for winning");
+MACRO_CONFIG_INT(SvBombScorePassBomb, sv_bomb_score_pass_bomb, 0, -100, 100, CFGFLAG_SAVE|CFGFLAG_SERVER, "Score gain for passing bomb onto other tee");
+MACRO_CONFIG_INT(SvBombScoreStunTee, sv_bomb_score_stun_tee, 0, -100, 100, CFGFLAG_SAVE|CFGFLAG_SERVER, "Score gain for stunning other tee");
+MACRO_CONFIG_INT(SvBombAllowKill, sv_bomb_allow_kill, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "");
 
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly

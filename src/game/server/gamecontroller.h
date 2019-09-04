@@ -167,7 +167,7 @@ public:
 
 	void OnPlayerConnect(class CPlayer *pPlayer);
 	void OnPlayerDisconnect(class CPlayer *pPlayer);
-	void OnPlayerInfoChange(class CPlayer *pPlayer);
+	virtual void OnPlayerInfoChange(class CPlayer *pPlayer);
 	void OnPlayerReadyChange(class CPlayer *pPlayer);
 	void OnPlayerCommand(class CPlayer *pPlayer, const char *pCommandName, const char *pCommandArgs);
 
@@ -202,6 +202,8 @@ public:
 	bool IsTeamplay() const { return m_GameFlags&GAMEFLAG_TEAMS; }
 	bool IsSurvival() const { return m_GameFlags&GAMEFLAG_SURVIVAL; }
 
+	virtual int GetGameStartTick() const { return m_GameStartTick; }
+	
 	const char *GetGameType() const { return m_pGameType; }
 
 	// map

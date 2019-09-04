@@ -13,12 +13,15 @@
 
 #include "entities/character.h"
 #include "entities/projectile.h"
+/*
 #include "gamemodes/ctf.h"
 #include "gamemodes/dm.h"
 #include "gamemodes/lms.h"
 #include "gamemodes/lts.h"
 #include "gamemodes/mod.h"
 #include "gamemodes/tdm.h"
+*/
+#include "gamemodes/bomb.h"
 #include "gamecontext.h"
 #include "player.h"
 
@@ -1060,7 +1063,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				return;
 
 			pPlayer->m_LastKill = Server()->Tick();
-			pPlayer->KillCharacter(WEAPON_SELF);
+			if(!Config()->m_SvBombAllowKill)
+				SendBroadcast("Kill is disabled", pPlayer->GetCID());
+			else
+				pPlayer->KillCharacter(WEAPON_SELF);
 		}
 		else if (MsgID == NETMSGTYPE_CL_READYCHANGE)
 		{
@@ -1569,6 +1575,8 @@ void CGameContext::OnInit()
 	m_Collision.Init(&m_Layers);
 
 	// select gametype
+	m_pController = new CGameControllerBOMB(this);
+	/*
 	if(str_comp_nocase(Config()->m_SvGametype, "mod") == 0)
 		m_pController = new CGameControllerMOD(this);
 	else if(str_comp_nocase(Config()->m_SvGametype, "ctf") == 0)
@@ -1581,6 +1589,7 @@ void CGameContext::OnInit()
 		m_pController = new CGameControllerTDM(this);
 	else
 		m_pController = new CGameControllerDM(this);
+	*/
 
 	m_pController->RegisterChatCommands(CommandManager());
 

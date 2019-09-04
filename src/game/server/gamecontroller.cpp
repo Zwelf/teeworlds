@@ -449,8 +449,7 @@ bool IGameController::DoWincheckMatch()
 		}
 
 		// check score win condition
-		if((m_GameInfo.m_ScoreLimit > 0 && Topscore >= m_GameInfo.m_ScoreLimit) ||
-			(m_GameInfo.m_TimeLimit > 0 && (Server()->Tick()-m_GameStartTick) >= m_GameInfo.m_TimeLimit*Server()->TickSpeed()*60))
+		if(m_GameInfo.m_ScoreLimit > 0 && Topscore >= m_GameInfo.m_ScoreLimit)
 		{
 			if(TopscoreCount == 1)
 			{
@@ -470,7 +469,7 @@ void IGameController::ResetGame()
 	GameServer()->m_World.m_ResetRequested = true;
 
 	SetGameState(IGS_GAME_RUNNING);
-	m_GameStartTick = Server()->Tick();
+	m_GameStartTick = Server()->Tick() - (60-Config()->m_SvBombTime)*Server()->TickSpeed();
 	m_SuddenDeath = 0;
 
 	CheckGameInfo();

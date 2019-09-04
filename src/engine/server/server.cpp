@@ -377,7 +377,7 @@ int CServer::Init()
 		m_aClients[i].m_Snapshots.Init();
 	}
 
-	m_CurrentGameTick = 0;
+	m_CurrentGameTick = 10 * 60 * TickSpeed();
 
 	return 0;
 }
@@ -1378,6 +1378,7 @@ int CServer::Run()
 
 		m_Lastheartbeat = 0;
 		m_GameStartTime = time_get();
+		m_GameStartTime = TickStartTime(-m_CurrentGameTick);
 
 		while(m_RunServer)
 		{
@@ -1409,8 +1410,9 @@ int CServer::Run()
 						m_aClients[c].m_State = aSpecs[c] ? CClient::STATE_CONNECTING_AS_SPEC : CClient::STATE_CONNECTING;
 					}
 
+					m_CurrentGameTick = 10 * 60 * TickSpeed();
 					m_GameStartTime = time_get();
-					m_CurrentGameTick = 0;
+					m_GameStartTime = TickStartTime(-m_CurrentGameTick);
 					Kernel()->ReregisterInterface(GameServer());
 					GameServer()->OnInit();
 				}

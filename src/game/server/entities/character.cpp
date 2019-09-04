@@ -59,7 +59,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_EmoteStop = -1;
 	m_LastAction = -1;
 	m_LastNoAmmoSound = -1;
-	m_ActiveWeapon = WEAPON_GUN;
+	m_ActiveWeapon = WEAPON_HAMMER;
 	m_LastWeapon = WEAPON_HAMMER;
 	m_QueuedWeapon = -1;
 
@@ -77,7 +77,12 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 	GameWorld()->InsertEntity(this);
 	m_Alive = true;
+	m_Bomb = true;
+	m_NextBomb = true;
+	m_Frozen = false;
+	m_FreezeTick = 0;
 
+	GameServer()->m_pController->OnPlayerInfoChange(m_pPlayer);
 	GameServer()->m_pController->OnCharacterSpawn(this);
 
 	return true;
@@ -200,6 +205,7 @@ void CCharacter::HandleNinja()
 
 void CCharacter::DoWeaponSwitch()
 {
+	return; // Bomb only has hammer
 	// make sure we can switch
 	if(m_ReloadTimer != 0 || m_QueuedWeapon == -1 || m_aWeapons[WEAPON_NINJA].m_Got)
 		return;
@@ -330,11 +336,43 @@ void CCharacter::FireWeapon()
 				pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, Dir*-1, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
 					m_pPlayer->GetCID(), m_ActiveWeapon);
 				Hits++;
+
+				if(m_Bomb)
+				{
+					pTarget->m_NextBomb = true;
+					m_pPlayer->m_Score += Config()->m_SvBombScorePassBomb;
+					// send the kill message (bomb transfer message)
+					CNetMsg_Sv_KillMsg Msg;
+					Msg.m_Killer = m_pPlayer->GetCID();
+					Msg.m_Victim = pTarget->m_pPlayer->GetCID();
+					Msg.m_Weapon = m_ActiveWeapon;
+					Msg.m_ModeSpecial = 0; // no flag
+					Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+				}
+				else
+				{
+					// humans have a freeze hammer
+					if(pTarget->m_FreezeTick + Server()->TickSpeed() < Server()->Tick())
+					{
+						m_pPlayer->m_Score += Config()->m_SvBombScoreStunTee;
+						pTarget->m_FreezeTick = Server()->Tick();
+						pTarget->m_Frozen = true;
+						GameServer()->m_pController->OnPlayerInfoChange(pTarget->GetPlayer());
+					}
+				}
 			}
 
 			// if we Hit anything, we have to wait for the reload
 			if(Hits)
+			{
 				m_ReloadTimer = Server()->TickSpeed()/3;
+				if(m_Bomb)
+				{
+					m_Bomb = false;
+					GameServer()->SendBroadcast("", m_pPlayer->GetCID()); // hide instruction broadcast
+					GameServer()->m_pController->OnPlayerInfoChange(m_pPlayer);
+				}
+			}
 
 		} break;
 
@@ -533,7 +571,7 @@ void CCharacter::ResetInput()
 void CCharacter::Tick()
 {
 	m_Core.m_Input = m_Input;
-	m_Core.Tick(true);
+	m_Core.Tick(!m_Frozen);
 
 	// handle leaving gamelayer
 	if(GameLayerClipped(m_Pos))
@@ -548,6 +586,44 @@ void CCharacter::Tick()
 void CCharacter::TickDefered()
 {
 	static const vec2 ColBox(CCharacterCore::PHYS_SIZE, CCharacterCore::PHYS_SIZE);
+	if(m_Frozen && m_FreezeTick + Server()->TickSpeed() / 4 < Server()->Tick())
+	{
+		m_Frozen = false;
+		GameServer()->m_pController->OnPlayerInfoChange(m_pPlayer);
+	}
+	if(m_NextBomb)
+	{
+		m_Bomb = true;
+		m_NextBomb = false;
+		GameServer()->m_pController->OnPlayerInfoChange(m_pPlayer);
+		m_ReloadTimer = Server()->TickSpeed()/3; // Same timer as hitting, prevent instant hammer back
+		GameServer()->SendBroadcast("You are a bomb\nHit another player before the time runs out!", m_pPlayer->GetCID());
+	}
+	// health as indicator for countdown until the bombs explode
+	if(GameServer()->m_pController->IsGameRunning() &&
+			(Server()->Tick() - GameServer()->m_pController->GetGameStartTick()) % (Config()->m_SvBombTime * Server()->TickSpeed() / 20) == 0)
+	{
+		int HealthRemaining = 20 // max life
+				- (Server()->Tick() - GameServer()->m_pController->GetGameStartTick()) // Already passed ticks in this round
+				/ (Config()->m_SvBombTime * Server()->TickSpeed() / 20); // length of 1/20 time slice
+
+		m_Health = clamp(HealthRemaining, 0, 10);
+		m_Armor = clamp(HealthRemaining - 10, 0, 10);
+		if(m_Bomb)
+		{
+			if(m_Health > 5)
+			{
+				// create sound
+				GameServer()->CreateSound(m_Pos, SOUND_PICKUP_HEALTH); // Maybe: SOUND_PICKUP_HEALTH, SOUND_WEAPON_NOAMMO, SOUND_HOOK_NOATTACH
+				GameServer()->CreateDamage(m_Pos, m_pPlayer->GetCID(), vec2(0.0f, 0.0f), 0, 1, false);
+			}
+			else
+			{
+				GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
+				GameServer()->CreateDamage(m_Pos, m_pPlayer->GetCID(), vec2(0.0f, 0.0f), m_Health, 0, false);
+			}
+		}
+	}
 	// advance the dummy
 	{
 		CWorldCore TempWorld;
@@ -712,6 +788,8 @@ void CCharacter::Die(int Killer, int Weapon)
 bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weapon)
 {
 	m_Core.m_Vel += Force;
+
+	return false; // No damage control done in bomb
 
 	if(From >= 0)
 	{

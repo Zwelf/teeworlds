@@ -971,6 +971,9 @@ set(EXPECTED_DATA
   mapres/winter_mountains.png
   mapres/winter_mountains2.png
   mapres/winter_mountains3.png
+  maps/bomb1.map
+  maps/bomb2.map
+  maps/bomb3.map
   maps/ctf1.map
   maps/ctf2.map
   maps/ctf3.map
@@ -997,6 +1000,7 @@ set(EXPECTED_DATA
   skins/body/bat.png
   skins/body/bear.png
   skins/body/beaver.png
+  skins/body/bomb.png
   skins/body/dog.png
   skins/body/force.png
   skins/body/fox.png
@@ -1016,6 +1020,7 @@ set(EXPECTED_DATA
   skins/cammo.json
   skins/cammostripes.json
   skins/cavebat.json
+  skins/decoration/bomb.png
   skins/decoration/hair.png
   skins/decoration/twinbopp.png
   skins/decoration/twinmello.png
@@ -1614,6 +1619,8 @@ set_src(GAME_SERVER GLOB_RECURSE src/game/server
   gamecontext.h
   gamecontroller.cpp
   gamecontroller.h
+  gamemodes/bomb.cpp
+  gamemodes/bomb.h
   gamemodes/ctf.cpp
   gamemodes/ctf.h
   gamemodes/dm.cpp

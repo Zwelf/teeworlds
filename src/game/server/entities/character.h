@@ -61,22 +61,13 @@ public:
 	void SetEmote(int Emote, int Tick);
 
 	bool IsAlive() const { return m_Alive; }
-	bool IsFrozen() const { return m_Frozen; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
-
-	// bomb status
-	bool m_Bomb;
-	bool m_NextBomb; // got hit by another bomb -> bomb in next tick
 
 private:
 	// player controlling this character
 	class CPlayer *m_pPlayer;
 
 	bool m_Alive;
-
-	// got hit by a human
-	int m_FreezeTick;
-	bool m_Frozen;
 
 	// weapon info
 	CEntity *m_apHitObjects[10];

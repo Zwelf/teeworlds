@@ -33,6 +33,11 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 	m_RespawnDisabled = GameServer()->m_pController->GetStartRespawnState();
 	m_DeadSpecMode = false;
 	m_Spawning = 0;
+	m_Bomb = false;
+	m_NextBomb = false;
+	m_NextStun = false;
+	m_StunTick = -1;
+	m_InGame = false;
 }
 
 CPlayer::~CPlayer()
@@ -45,6 +50,20 @@ void CPlayer::Tick()
 {
 	if(!IsDummy() && !Server()->ClientIngame(m_ClientID))
 		return;
+
+	if(m_NextBomb)
+	{
+		m_NextStun = true; // prevent instant hammer back
+		GameServer()->SendBroadcast("You are a bomb\nHit another player before the time runs out!", GetCID());
+		m_Bomb = true;
+		m_NextBomb = false;
+		GameServer()->m_pController->OnPlayerInfoChange(this);
+	}
+	if(m_NextStun)
+	{
+		m_NextStun = false;
+		m_StunTick = Server()->Tick();
+	}
 
 	Server()->SetClientScore(m_ClientID, m_Score);
 
@@ -109,6 +128,7 @@ void CPlayer::Tick()
 		++m_ScoreStartTick;
 		++m_LastActionTick;
 		++m_TeamChangeTick;
+		++m_StunTick;
  	}
 }
 
@@ -339,6 +359,11 @@ void CPlayer::Respawn()
 	}
 
 	m_DeadSpecMode = false;
+	m_InGame = true;
+	m_Bomb = false;
+	m_NextBomb = false;
+	m_NextStun = false;
+	m_StunTick = -1;
 
 	if(m_Team != TEAM_SPECTATORS)
 		m_Spawning = true;
@@ -423,6 +448,29 @@ void CPlayer::UpdateDeadSpecMode()
 
 	// no one available to follow -> turn spectator mode off
 	m_DeadSpecMode = false;
+}
+
+void CPlayer::SetBomb(bool Bomb)
+{
+	if(Bomb)
+		m_NextBomb = true;
+	else
+		m_Bomb = false;
+}
+
+bool CPlayer::IsStun() const
+{
+	return m_StunTick + Server()->TickSpeed() / 4 >= Server()->Tick();
+}
+
+bool CPlayer::Stun()
+{
+	if(m_StunTick + Server()->TickSpeed() < Server()->Tick())
+	{
+		m_NextStun = true;
+		return true;
+	}
+	return false;
 }
 
 void CPlayer::SetTeam(int Team, bool DoChatMsg)

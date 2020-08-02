@@ -142,7 +142,8 @@ MACRO_CONFIG_INT(SvBombScoreSurvive, sv_bomb_score_survive, 1, 0, 100, CFGFLAG_S
 MACRO_CONFIG_INT(SvBombScoreLastSurvivor, sv_bomb_score_last_survivor, 0, 0, 100, CFGFLAG_SAVE|CFGFLAG_SERVER, "Score gain for winning");
 MACRO_CONFIG_INT(SvBombScorePassBomb, sv_bomb_score_pass_bomb, 0, -100, 100, CFGFLAG_SAVE|CFGFLAG_SERVER, "Score gain for passing bomb onto other tee");
 MACRO_CONFIG_INT(SvBombScoreStunTee, sv_bomb_score_stun_tee, 0, -100, 100, CFGFLAG_SAVE|CFGFLAG_SERVER, "Score gain for stunning other tee");
-MACRO_CONFIG_INT(SvBombAllowKill, sv_bomb_allow_kill, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "");
+MACRO_CONFIG_INT(SvBombProbability, sv_bomb_probability, 50, 0, 100, CFGFLAG_SAVE|CFGFLAG_SERVER, "Probability for a tee to become a bomb at the start of the round");
+MACRO_CONFIG_INT(SvBombAllowKill, sv_bomb_allow_kill, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "");
 
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly

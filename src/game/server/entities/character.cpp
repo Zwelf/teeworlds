@@ -77,10 +77,6 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 	GameWorld()->InsertEntity(this);
 	m_Alive = true;
-	m_Bomb = true;
-	m_NextBomb = true;
-	m_Frozen = false;
-	m_FreezeTick = 0;
 
 	GameServer()->m_pController->OnPlayerInfoChange(m_pPlayer);
 	GameServer()->m_pController->OnCharacterSpawn(this);
@@ -293,7 +289,7 @@ void CCharacter::FireWeapon()
 	}
 
 	// freeze means not being able to hammer
-	if(IsFrozen())
+	if(GetPlayer()->IsStun())
 	{
 		if(m_LastNoAmmoSound+Server()->TickSpeed() <= Server()->Tick())
 		{
@@ -348,9 +344,9 @@ void CCharacter::FireWeapon()
 					m_pPlayer->GetCID(), m_ActiveWeapon);
 				Hits++;
 
-				if(m_Bomb)
+				if(m_pPlayer->IsBomb())
 				{
-					pTarget->m_NextBomb = true;
+					pTarget->m_pPlayer->SetBomb(true);
 					m_pPlayer->m_Score += Config()->m_SvBombScorePassBomb;
 					// send the kill message (bomb transfer message)
 					CNetMsg_Sv_KillMsg Msg;
@@ -362,24 +358,19 @@ void CCharacter::FireWeapon()
 				}
 				else
 				{
-					// humans have a freeze hammer
-					if(pTarget->m_FreezeTick + Server()->TickSpeed() < Server()->Tick())
-					{
+					// humans stun with hammer as well
+					if(pTarget->GetPlayer()->Stun())
 						m_pPlayer->m_Score += Config()->m_SvBombScoreStunTee;
-						pTarget->m_FreezeTick = Server()->Tick();
-						pTarget->m_Frozen = true;
-						GameServer()->m_pController->OnPlayerInfoChange(pTarget->GetPlayer());
-					}
 				}
 			}
 
 			// if we Hit anything, we have to wait for the reload
-			if(Hits)
+			if(Hits > 0)
 			{
 				m_ReloadTimer = Server()->TickSpeed()/3;
-				if(m_Bomb)
+				if(m_pPlayer->IsBomb())
 				{
-					m_Bomb = false;
+					m_pPlayer->SetBomb(false);
 					GameServer()->SendBroadcast("", m_pPlayer->GetCID()); // hide instruction broadcast
 					GameServer()->m_pController->OnPlayerInfoChange(m_pPlayer);
 				}
@@ -597,19 +588,6 @@ void CCharacter::Tick()
 void CCharacter::TickDefered()
 {
 	static const vec2 ColBox(CCharacterCore::PHYS_SIZE, CCharacterCore::PHYS_SIZE);
-	if(m_Frozen && m_FreezeTick + Server()->TickSpeed() / 4 < Server()->Tick())
-	{
-		m_Frozen = false;
-		GameServer()->m_pController->OnPlayerInfoChange(m_pPlayer);
-	}
-	if(m_NextBomb)
-	{
-		m_Bomb = true;
-		m_NextBomb = false;
-		GameServer()->m_pController->OnPlayerInfoChange(m_pPlayer);
-		m_ReloadTimer = Server()->TickSpeed()/3; // Same timer as hitting, prevent instant hammer back
-		GameServer()->SendBroadcast("You are a bomb\nHit another player before the time runs out!", m_pPlayer->GetCID());
-	}
 	// health as indicator for countdown until the bombs explode
 	if(GameServer()->m_pController->IsGameRunning() &&
 			(Server()->Tick() - GameServer()->m_pController->GetGameStartTick()) % (Config()->m_SvBombTime * Server()->TickSpeed() / 20) == 0)
@@ -620,7 +598,7 @@ void CCharacter::TickDefered()
 
 		m_Health = clamp(HealthRemaining, 0, 10);
 		m_Armor = clamp(HealthRemaining - 10, 0, 10);
-		if(m_Bomb)
+		if(GetPlayer()->IsBomb())
 		{
 			if(m_Health > 5)
 			{
@@ -795,6 +773,7 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameWorld()->m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
 
+	m_pPlayer->m_InGame = false;
 	// fix hook going to (0,0) when hooking exploding bomb at the end of the game
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
@@ -802,6 +781,14 @@ void CCharacter::Die(int Killer, int Weapon)
 				GameServer()->m_apPlayers[i]->GetCharacter() != NULL &&
 				GameServer()->m_apPlayers[i]->GetCharacter()->m_Core.m_HookedPlayer == m_pPlayer->GetCID())
 			GameServer()->m_apPlayers[i]->GetCharacter()->m_Core.m_HookedPlayer = -1;
+	}
+	// some more sound when the bomb dies
+	if(m_pPlayer->IsBomb())
+	{
+		for(int i = 0; i < 16; i++)
+			GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
+		GameServer()->CreateExplosion(m_Pos, m_pPlayer->GetCID(), WEAPON_GAME, false);
+		GameServer()->CreateSound(m_Pos, SOUND_GRENADE_EXPLODE);
 	}
 }
 

@@ -39,7 +39,7 @@ void CGameControllerBOMB::OnPlayerInfoChange(CPlayer *pPlayer)
 {
 	pPlayer->m_TeeInfos.m_aUseCustomColors[SKINPART_BODY] = true;
 	pPlayer->m_TeeInfos.m_aUseCustomColors[SKINPART_DECORATION] = false;
-	if(pPlayer->GetCharacter() && pPlayer->GetCharacter()->m_Bomb)
+	if(pPlayer->IsBomb() && !IsGamePaused())
 	{
 		pPlayer->m_TeeInfos.m_aSkinPartColors[SKINPART_BODY] = 0;
 		str_copy(pPlayer->m_TeeInfos.m_aaSkinPartNames[SKINPART_BODY], "bomb", 24);
@@ -50,10 +50,6 @@ void CGameControllerBOMB::OnPlayerInfoChange(CPlayer *pPlayer)
 		pPlayer->m_TeeInfos.m_aSkinPartColors[SKINPART_BODY] = 16777215;
 		str_copy(pPlayer->m_TeeInfos.m_aaSkinPartNames[SKINPART_BODY], "bear", 24);
 		str_copy(pPlayer->m_TeeInfos.m_aaSkinPartNames[SKINPART_DECORATION], "hair", 24);
-	}
-	if(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsFrozen())
-	{
-		pPlayer->m_TeeInfos.m_aSkinPartColors[SKINPART_BODY] = 0x9BFF6B;
 	}
 	GameServer()->SendSkinChange(pPlayer->GetCID(), -1);
 }
@@ -68,7 +64,7 @@ void CGameControllerBOMB::DoWincheckRound()
 			(!GameServer()->m_apPlayers[i]->m_RespawnDisabled ||
 			(GameServer()->m_apPlayers[i]->GetCharacter() && GameServer()->m_apPlayers[i]->GetCharacter()->IsAlive()))) // joined this round or already exploded
 		{
-			if(GameServer()->m_apPlayers[i]->GetCharacter() == NULL || GameServer()->m_apPlayers[i]->GetCharacter()->m_Bomb)
+			if(GameServer()->m_apPlayers[i]->IsBomb())
 			{
 				// NULL if not yet spawned
 				aCount[BOMB] += 1;
@@ -80,7 +76,13 @@ void CGameControllerBOMB::DoWincheckRound()
 		}
 	}
 	int NumAlive = aCount[BOMB] + aCount[HUMAN];
-	if((Server()->Tick() - m_GameStartTick) >= m_GameInfo.m_TimeLimit*Server()->TickSpeed()*60)
+	// check if all bombs have left
+	if(aCount[HUMAN] > 1 && aCount[BOMB] == 0)
+	{
+		GameServer()->PickNewBombs();
+	}
+	// check for time based end
+	else if((Server()->Tick() - m_GameStartTick) >= m_GameInfo.m_TimeLimit*Server()->TickSpeed()*60)
 	{
 		if(aCount[HUMAN] == 0 && NumAlive != 1)
 		{
@@ -105,23 +107,17 @@ void CGameControllerBOMB::DoWincheckRound()
 				{
 					bool Explode = false;
 					// Give the last player points, even if it is a bomb
-					if(GameServer()->m_apPlayers[i]->GetCharacter()->m_Bomb && NumAlive != 1 )
+					if(GameServer()->m_apPlayers[i]->IsBomb() && NumAlive != 1 )
 					{
 						GameServer()->CreateExplosion(GameServer()->m_apPlayers[i]->m_ViewPos, i, WEAPON_GAME, false);
 						GameServer()->CreateSound(GameServer()->m_apPlayers[i]->m_ViewPos, SOUND_GRENADE_EXPLODE);
-						GameServer()->m_apPlayers[i]->GetCharacter()->Die(GameServer()->m_apPlayers[i]->GetCID(), WEAPON_GAME);
+						GameServer()->m_apPlayers[i]->KillCharacter(WEAPON_GAME);
 						Explode = true;
 					}
 					else
 					{
 						GameServer()->m_apPlayers[i]->m_Score += Config()->m_SvBombScoreSurvive; // Do Round Scoring
-						if(aCount[HUMAN] > 1)
-						{
-							GameServer()->m_apPlayers[i]->GetCharacter()->m_Bomb = true;
-							GameServer()->m_apPlayers[i]->GetCharacter()->m_NextBomb = true;
-							OnPlayerInfoChange(GameServer()->m_apPlayers[i]);
-						}
-						else
+						if(aCount[HUMAN] == 1)
 						{
 							GameServer()->m_apPlayers[i]->m_Score += Config()->m_SvBombScoreLastSurvivor;
 						}
@@ -133,6 +129,10 @@ void CGameControllerBOMB::DoWincheckRound()
 						GameServer()->SendBroadcast(Config()->m_SvBombExplodeMessage, -1);
 					}
 				}
+			}
+			if(aCount[HUMAN] > 1)
+			{
+				GameServer()->PickNewBombs();
 			}
 			if(aCount[HUMAN] == 1 || NumAlive == 1)
 			{

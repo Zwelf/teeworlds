@@ -29,4 +29,8 @@ Config
 * `sv_bomb_score_pass_bomb`: score gain for passing bomb onto other tee (default 0)
 * `sv_bomb_score_stun_tee`: score gain for stunning a tee (default 0)
 * `sv_bomb_score_last_survivor`: score gain for being the last survivor (default 0)
-* `sv_bomb_allow_kill`: allow kill via console kill commando (default 0)
+* `sv_bomb_allow_kill`: allow kill via console kill commando (default 1)
+* `sv_bomb_probability`: Probability of a player to become a bomb when choosing a new bomb.
+  At least one player is chosen, therefore playing with `sv_bomb_probability 0` always
+  one player is chosen and with `sv_bomb_probability 100` every player starts as a bomb.
+  Default is set to 50.

@@ -112,6 +112,12 @@ public:
 		int m_Max;
 	} m_Latency;
 
+	bool IsBomb() const { return m_Bomb || m_NextBomb; }
+	void SetBomb(bool Bomb);
+	bool IsStun() const;
+	bool Stun();
+	bool m_InGame;
+
 private:
 	CCharacter *m_pCharacter;
 	CGameContext *m_pGameServer;
@@ -130,6 +136,12 @@ private:
 	int m_SpectatorID;
 	class CFlag *m_pSpecFlag;
 	bool m_ActiveSpecSwitch;
+
+	// bomb status
+	bool m_Bomb;
+	bool m_NextBomb; // got hit by another bomb -> bomb in next tick
+	bool m_NextStun;
+	int m_StunTick;
 };
 
 #endif

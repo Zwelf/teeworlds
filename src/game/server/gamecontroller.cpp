@@ -409,6 +409,8 @@ void IGameController::OnReset()
 			GameServer()->m_apPlayers[i]->m_IsReadyToPlay = true;
 		}
 	}
+
+	GameServer()->PickNewBombs();
 }
 
 // game
@@ -622,6 +624,13 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 			m_SuddenDeath = 0;
 			GameServer()->m_World.m_Paused = true;
 		}
+	}
+
+	// bomb
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		if(GameServer()->m_apPlayers[i] != NULL)
+			OnPlayerInfoChange(GameServer()->m_apPlayers[i]);
 	}
 }
 

@@ -192,6 +192,38 @@ void CGameContext::CreateSound(vec2 Pos, int Sound, int64 Mask)
 	}
 }
 
+void CGameContext::PickNewBombs()
+{
+	int NumBombs = 0;
+	int Count = 0;
+	int Candidates[MAX_PLAYERS];
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		if(m_apPlayers[i] == NULL || m_apPlayers[i]->GetTeam() == TEAM_SPECTATORS)
+			continue;
+		if(!m_apPlayers[i]->m_InGame)
+			continue;
+		if(rand() % 100 < Config()->m_SvBombProbability)
+		{
+			dbg_msg("bomb", "Player selected as bomb %d", i);
+			m_apPlayers[i]->SetBomb(true);
+			NumBombs++;
+		}
+		else
+		{
+			dbg_msg("bomb", "Player selected as human %d", i);
+			m_apPlayers[i]->SetBomb(false);
+		}
+		Candidates[Count++] = i;
+	}
+	if(NumBombs == 0 && Count > 0)
+	{
+		int BombId = Candidates[rand() % Count];
+		dbg_msg("bomb", "Single player selected as bomb %d", BombId);
+		m_apPlayers[BombId]->SetBomb(true);
+	}
+}
+
 void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
 {
 	char aBuf[256];

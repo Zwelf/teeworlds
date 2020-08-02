@@ -292,6 +292,17 @@ void CCharacter::FireWeapon()
 		return;
 	}
 
+	// freeze means not being able to hammer
+	if(IsFrozen())
+	{
+		if(m_LastNoAmmoSound+Server()->TickSpeed() <= Server()->Tick())
+		{
+			GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
+			m_LastNoAmmoSound = Server()->Tick();
+		}
+		return;
+	}
+
 	vec2 ProjStartPos = m_Pos+Direction*GetProximityRadius()*0.75f;
 
 	if(Config()->m_Debug)
@@ -571,7 +582,7 @@ void CCharacter::ResetInput()
 void CCharacter::Tick()
 {
 	m_Core.m_Input = m_Input;
-	m_Core.Tick(!m_Frozen);
+	m_Core.Tick(true);
 
 	// handle leaving gamelayer
 	if(GameLayerClipped(m_Pos))

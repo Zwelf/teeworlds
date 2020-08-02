@@ -783,6 +783,15 @@ void CCharacter::Die(int Killer, int Weapon)
 	GameWorld()->RemoveEntity(this);
 	GameWorld()->m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCID());
+
+	// fix hook going to (0,0) when hooking exploding bomb at the end of the game
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		if(GameServer()->m_apPlayers[i] != NULL &&
+				GameServer()->m_apPlayers[i]->GetCharacter() != NULL &&
+				GameServer()->m_apPlayers[i]->GetCharacter()->m_Core.m_HookedPlayer == m_pPlayer->GetCID())
+			GameServer()->m_apPlayers[i]->GetCharacter()->m_Core.m_HookedPlayer = -1;
+	}
 }
 
 bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weapon)

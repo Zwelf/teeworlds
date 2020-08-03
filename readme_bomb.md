@@ -34,3 +34,30 @@ Config
   At least one player is chosen, therefore playing with `sv_bomb_probability 0` always
   one player is chosen and with `sv_bomb_probability 100` every player starts as a bomb.
   Default is set to 50.
+
+Example `autoexec.cfg`
+----------------------
+
+```
+# Probability for a tee to become a bomb at the start of the round
+# when set to 0 always one player starts as bomb
+# when set to 100 all players start as bomb
+sv_bomb_probability 50
+
+# Scoring points gain for surviving as a human
+sv_bomb_score_survive 1       # for surviving as a human
+sv_bomb_score_last_survivor 0 # for being the last survivor
+sv_bomb_score_pass_bomb 0     # for passing the own bomb onto other tee
+sv_bomb_score_stun_tee 0      # for stunning other tee
+
+# allow kill command
+sv_bomb_allow_kill 1
+
+add_vote "One player is selected as a bomb" "sv_bomb_probability 0"
+add_vote "Randomize the number of bombs" "sv_bomb_probability 50"
+add_vote "All player start as a bombs" "sv_bomb_probability 100"
+
+add_vote "Map: bomb1 (at least 2 players recommended)" "sv_map bomb1"
+add_vote "Map: bomb2 (at least 3 players recommended)" "sv_map bomb2"
+add_vote "Map: bomb3 (at least 4 players recommended)" "sv_map bomb3"
+```
